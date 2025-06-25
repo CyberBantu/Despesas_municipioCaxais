@@ -202,20 +202,22 @@ if pagina == "Fonte e Destinação":
     st.plotly_chart(fig, use_container_width=True)
 
 if pagina == "Favorecido":
-
     # Agregação: favorecido, função e valor
     df_favorecido = df.groupby([
         'CPF_CNPJ_FORMATADA', 'descricao_favorecido', 'funcao', 'nome_secretria','descricao_elemento_despesa', 'modalidade_licitacao', 
     ])['valor_pago_liquido'].sum().reset_index()
 
     # Filtros em colunas lado a lado
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
     with col1:
         funcoes_disponiveis = df_favorecido['funcao'].unique().tolist()
         funcao_selecionada = st.selectbox("Selecione a função:", ["Todas"] + funcoes_disponiveis)
     with col2:
         favorecidos_disponiveis = df_favorecido['descricao_favorecido'].unique().tolist()
         favorecido_selecionado = st.selectbox("Selecione o favorecido:", ["Todos"] + favorecidos_disponiveis)
+    with col3:
+        modalidades_disponiveis = df_favorecido['modalidade_licitacao'].unique().tolist()
+        modalidade_selecionada = st.selectbox("Selecione a modalidade de licitação:", ["Todas"] + modalidades_disponiveis)
 
     # Aplicar filtros
     df_favorecido_filtrado = df_favorecido.copy()
@@ -223,9 +225,15 @@ if pagina == "Favorecido":
         df_favorecido_filtrado = df_favorecido_filtrado[df_favorecido_filtrado['funcao'] == funcao_selecionada]
     if favorecido_selecionado != "Todos":
         df_favorecido_filtrado = df_favorecido_filtrado[df_favorecido_filtrado['descricao_favorecido'] == favorecido_selecionado]
+    if modalidade_selecionada != "Todas":
+        df_favorecido_filtrado = df_favorecido_filtrado[df_favorecido_filtrado['modalidade_licitacao'] == modalidade_selecionada]
+
+    # Valor total após filtros
+    total_pago_filtrado = df_favorecido_filtrado['valor_pago_liquido'].sum()
+    valor_total_formatado = f"R$ {total_pago_filtrado:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    st.metric("Valor Pago Líquido Total (após filtros)", valor_total_formatado)
 
     # Cálculo de percentual
-    total_pago_filtrado = df_favorecido_filtrado['valor_pago_liquido'].sum()
     df_favorecido_filtrado['percentual'] = (df_favorecido_filtrado['valor_pago_liquido'] / total_pago_filtrado * 100).round(2)
 
     # Ordena e formata valores
